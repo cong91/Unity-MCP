@@ -87,10 +87,10 @@ namespace com.IvanMurzak.Unity.MCP.Editor.Utils
         public override void ApplyHttpAuthorization(bool isRequired, string? token)
         {
             SetPropertyToRemove("headers");
+            SetPropertyToRemove("bearer_token");
+
             if (isRequired && !string.IsNullOrEmpty(token))
-                SetProperty("bearer_token", token, requiredForConfiguration: true);
-            else
-                SetPropertyToRemove("bearer_token");
+                SetProperty("headers.Authorization", $"Bearer {token}", requiredForConfiguration: true);
         }
 
         public override void ApplyStdioAuthorization(bool isRequired, string? token)
