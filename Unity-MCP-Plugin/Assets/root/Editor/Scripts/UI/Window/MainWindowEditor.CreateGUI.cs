@@ -281,17 +281,32 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 return;
             }
 
-            SetStatusIndicator(_aiAgentStatusCircle, isConnected ? USS_Connected : USS_Disconnected);
-            _aiAgentStatusCircle.tooltip = Tooltip_AiAgentTimelineLabel;
+            var isAgentConfigured = !isConnected && IsCurrentAiAgentConfigured();
+            var statusClass = isConnected
+                ? USS_Connected
+                : isAgentConfigured
+                    ? USS_External
+                    : USS_Disconnected;
+            var tooltip = isConnected
+                ? Tooltip_AiAgentTimelineLabel
+                : isAgentConfigured
+                    ? "The selected AI agent is configured and skills are generated, but no live AI client is currently connected to the MCP server yet. Start Hermes and make one request so Unity can detect the active client session."
+                    : Tooltip_AiAgentTimelineLabel;
 
-            _aiAgentLabelsContainer.tooltip = Tooltip_AiAgentTimelineLabel;
+            SetStatusIndicator(_aiAgentStatusCircle, statusClass);
+            _aiAgentStatusCircle.tooltip = tooltip;
+
+            _aiAgentLabelsContainer.tooltip = tooltip;
             _aiAgentLabelsContainer.Clear();
             var labelList = labels?.ToList();
+            if ((labelList == null || labelList.Count == 0) && isAgentConfigured)
+                labelList = new List<string> { $"AI agent: {currentAiAgentConfigurator?.AgentName ?? "Configured"} (configured, waiting for connection)" };
+
             if (labelList == null || labelList.Count == 0)
             {
                 var lbl = new Label("AI agent");
                 lbl.AddToClassList("timeline-label");
-                lbl.tooltip = Tooltip_AiAgentTimelineLabel;
+                lbl.tooltip = tooltip;
                 _aiAgentLabelsContainer.Add(lbl);
             }
             else
@@ -300,10 +315,21 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 {
                     var lbl = new Label(text);
                     lbl.AddToClassList("timeline-label");
-                    lbl.tooltip = Tooltip_AiAgentTimelineLabel;
+                    lbl.tooltip = tooltip;
                     _aiAgentLabelsContainer.Add(lbl);
                 }
             }
+        }
+
+        private bool IsCurrentAiAgentConfigured()
+        {
+            var configurator = currentAiAgentConfigurator;
+            if (configurator == null)
+                return false;
+
+            var hasSkills = configurator.SupportsSkills && UnityMcpPluginEditor.IsAutoGenerateSkills(configurator.AgentId);
+            var hasMcpConfig = configurator.ConfigStdio.IsDetected() || configurator.ConfigHttp.IsDetected();
+            return hasSkills || hasMcpConfig;
         }
 
         #endregion
