@@ -12,7 +12,7 @@ export interface AgentDefinition {
   name: string;
   skillsPath: string | null;
   configPathDisplay: string;
-  configFormat: 'json' | 'toml';
+  configFormat: 'json' | 'toml' | 'yaml';
   bodyPath: string;
   getConfigPath(projectPath: string): string;
   getStdioProps(
@@ -460,6 +460,31 @@ export const agentRegistry: readonly AgentDefinition[] = [
     httpRemoveKeys: ['command', 'args'],
   },
 
+  // ── Hermes Agent ───────────────────────────────────────────
+  {
+    id: 'hermes-agent',
+    name: 'Hermes Agent',
+    skillsPath: '.hermes/skills',
+    configPathDisplay: '~/.hermes/config.yaml',
+    configFormat: 'yaml',
+    bodyPath: 'mcp_servers',
+    getConfigPath: () => path.join(home(), '.hermes', 'config.yaml'),
+    getStdioProps: (serverPath, port, timeout, auth, token) => ({
+      command: serverPath,
+      args: stdioArgs(port, timeout, auth, token).map((arg) => `--${arg}`),
+      connect_timeout: 120,
+      timeout: 120,
+    }),
+    getHttpProps: (url, token, authRequired) => ({
+      url,
+      ...(authRequired && token ? { bearer_token: token } : {}),
+      connect_timeout: 120,
+      timeout: 120,
+    }),
+    stdioRemoveKeys: ['url', 'bearer_token'],
+    httpRemoveKeys: ['command', 'args'],
+  },
+
   // ── Unity AI ────────────────────────────────────────────────
   {
     id: 'unity-ai',
@@ -628,6 +653,226 @@ export function writeJsonAgentConfig(
   root[bodyPath] = body;
 
   fs.writeFileSync(configPath, JSON.stringify(root, null, 2) + '\n');
+}
+
+// ---------------------------------------------------------------------------
+// Config file writing — YAML (Hermes Agent)
+// ---------------------------------------------------------------------------
+
+export function writeYamlAgentConfig(
+  configPath: string,
+  bodyPath: string,
+  serverName: string,
+  props: Record<string, unknown>,
+  projectSkillsPath?: string,
+): void {
+  const dir = path.dirname(configPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const lines = fs.existsSync(configPath)
+    ? fs.readFileSync(configPath, 'utf-8').split('\n')
+    : [];
+
+  upsertYamlServerBlock(lines, bodyPath, serverName, props);
+
+  if (projectSkillsPath) {
+    ensureYamlListContains(
+      lines,
+      'skills',
+      'external_dirs',
+      projectSkillsPath.replace(/\\/g, '/'),
+    );
+  }
+
+  fs.writeFileSync(configPath, lines.join('\n').replace(/\n*$/, '\n'));
+}
+
+function upsertYamlServerBlock(
+  lines: string[],
+  bodyPath: string,
+  serverName: string,
+  props: Record<string, unknown>,
+): void {
+  let sectionStart = findTopLevelSection(lines, bodyPath);
+  if (sectionStart < 0) {
+    if (lines.length > 0 && lines[lines.length - 1].trim() !== '') {
+      lines.push('');
+    }
+    lines.push(`${bodyPath}:`);
+    sectionStart = lines.length - 1;
+  }
+
+  const sectionEnd = findTopLevelSectionEnd(lines, sectionStart);
+  const existingStart = findExactLine(lines, `  ${serverName}:`, sectionStart + 1, sectionEnd);
+  const renderedBlock = renderYamlServerBlock(serverName, props);
+
+  if (existingStart >= 0) {
+    const existingEnd = findIndentedBlockEnd(lines, existingStart, 2, sectionEnd);
+    lines.splice(existingStart, existingEnd - existingStart, ...renderedBlock);
+  } else {
+    lines.splice(sectionEnd, 0, ...renderedBlock);
+  }
+}
+
+function ensureYamlListContains(
+  lines: string[],
+  sectionName: string,
+  propertyName: string,
+  value: string,
+): void {
+  let sectionStart = findTopLevelSection(lines, sectionName);
+  if (sectionStart < 0) {
+    if (lines.length > 0 && lines[lines.length - 1].trim() !== '') {
+      lines.push('');
+    }
+    lines.push(`${sectionName}:`);
+    sectionStart = lines.length - 1;
+  }
+
+  const sectionEnd = findTopLevelSectionEnd(lines, sectionStart);
+  const propertyStart = findPropertyLine(lines, propertyName, sectionStart + 1, sectionEnd);
+  const values = propertyStart >= 0
+    ? parseYamlList(lines, propertyStart, sectionEnd)
+    : [];
+
+  if (!values.includes(value)) {
+    values.push(value);
+  }
+
+  const rendered = [
+    `  ${propertyName}:`,
+    ...values.map((item) => `    - ${yamlScalar(item)}`),
+  ];
+
+  if (propertyStart >= 0) {
+    const propertyEnd = findIndentedBlockEnd(lines, propertyStart, 2, sectionEnd);
+    lines.splice(propertyStart, propertyEnd - propertyStart, ...rendered);
+  } else {
+    lines.splice(sectionEnd, 0, ...rendered);
+  }
+}
+
+function findTopLevelSection(lines: string[], name: string): number {
+  return lines.findIndex((line) => line.trim() === `${name}:`);
+}
+
+function findTopLevelSectionEnd(lines: string[], start: number): number {
+  let i = start + 1;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
+      break;
+    }
+    i++;
+  }
+  return i;
+}
+
+function findExactLine(lines: string[], exact: string, start: number, end: number): number {
+  for (let i = start; i < end; i++) {
+    if (lines[i].trimEnd() === exact) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function findPropertyLine(lines: string[], propertyName: string, start: number, end: number): number {
+  const pattern = new RegExp(`^  ${propertyName}:`);
+  for (let i = start; i < end; i++) {
+    if (pattern.test(lines[i])) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function findIndentedBlockEnd(lines: string[], start: number, parentIndent: number, maxEnd: number): number {
+  let i = start + 1;
+  while (i < maxEnd) {
+    const line = lines[i];
+    if (line.trim() === '') {
+      i++;
+      continue;
+    }
+    const indent = line.length - line.trimStart().length;
+    if (indent <= parentIndent) {
+      break;
+    }
+    i++;
+  }
+  return i;
+}
+
+function parseYamlList(lines: string[], propertyStart: number, maxEnd: number): string[] {
+  const inlineMatch = lines[propertyStart].match(/^  [^:]+:\s*\[(.*)\]\s*$/);
+  if (inlineMatch) {
+    const inner = inlineMatch[1].trim();
+    if (!inner) {
+      return [];
+    }
+
+    return inner
+      .split(',')
+      .map((item) => unquoteYamlScalar(item.trim()))
+      .filter(Boolean);
+  }
+
+  const values: string[] = [];
+  for (let i = propertyStart + 1; i < maxEnd; i++) {
+    const line = lines[i];
+    if (line.trim() === '') {
+      continue;
+    }
+    const indent = line.length - line.trimStart().length;
+    if (indent <= 2) {
+      break;
+    }
+
+    const match = line.match(/^\s*-\s*(.*)$/);
+    if (match) {
+      values.push(unquoteYamlScalar(match[1].trim()));
+    }
+  }
+  return values;
+}
+
+function renderYamlServerBlock(serverName: string, props: Record<string, unknown>): string[] {
+  const lines = [`  ${serverName}:`];
+
+  for (const key of Object.keys(props).sort()) {
+    const value = props[key];
+    if (Array.isArray(value)) {
+      lines.push(`    ${key}:`);
+      for (const item of value) {
+        lines.push(`      - ${yamlScalar(item)}`);
+      }
+    } else {
+      lines.push(`    ${key}: ${yamlScalar(value)}`);
+    }
+  }
+
+  return lines;
+}
+
+function yamlScalar(value: unknown): string {
+  if (typeof value === 'string') {
+    return JSON.stringify(value.replace(/\\/g, '/'));
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return JSON.stringify(value);
+}
+
+function unquoteYamlScalar(value: string): string {
+  const trimmed = value.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1).replace(/\\"/g, '"').replace(/\\/g, '/');
+  }
+  return trimmed.replace(/\\/g, '/');
 }
 
 // ---------------------------------------------------------------------------

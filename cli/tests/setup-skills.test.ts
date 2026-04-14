@@ -83,6 +83,7 @@ describe('setup-skills command', () => {
     expect(exitCode).toBe(0);
     // Table should include at least one agent with skills support
     expect(stdout).toContain('claude-code');
+    expect(stdout).toContain('hermes-agent');
   });
 
   it('exits 1 with error when agent-id is missing', async () => {

@@ -12,6 +12,7 @@ import {
   resolveServerBinaryPath,
   writeJsonAgentConfig,
   writeTomlAgentConfig,
+  writeYamlAgentConfig,
   MCP_SERVER_NAME,
 } from '../utils/agents.js';
 
@@ -141,6 +142,14 @@ export const setupMcpCommand = new Command('setup-mcp')
             MCP_SERVER_NAME,
             props,
             removeKeys,
+          );
+        } else if (agent.configFormat === 'yaml') {
+          writeYamlAgentConfig(
+            configPath,
+            agent.bodyPath,
+            MCP_SERVER_NAME,
+            props,
+            agent.skillsPath ? path.join(projectPath, agent.skillsPath) : undefined,
           );
         } else {
           writeJsonAgentConfig(

@@ -34,6 +34,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 new ClineConfigurator(),
                 new OpenCodeConfigurator(),
                 new CodexConfigurator(),
+                new HermesConfigurator(),
                 new KiloCodeConfigurator(),
                 new UnityAiConfigurator(),
             }

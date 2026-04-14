@@ -9,9 +9,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const CLI_PATH = path.resolve(__dirname, '..', '..', 'bin', 'unity-mcp-cli.js');
 
 /** Run the CLI as a child process with timeout and error handling. */
-export function runCliAsync(args: string[]): Promise<{ stdout: string; exitCode: number }> {
+export function runCliAsync(
+  args: string[],
+  env?: NodeJS.ProcessEnv,
+): Promise<{ stdout: string; exitCode: number }> {
   return new Promise((resolve) => {
-    const child = spawn('node', [CLI_PATH, ...args], { stdio: 'pipe' });
+    const child = spawn('node', [CLI_PATH, ...args], {
+      stdio: 'pipe',
+      env: env ? { ...process.env, ...env } : process.env,
+    });
     let stdout = '';
     let settled = false;
     const timeoutMs = 30000;
