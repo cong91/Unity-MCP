@@ -34,22 +34,22 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
         public CopyAssetsResponse Copy
         (
             [Description("The paths of the assets to copy.")]
-            string[] sourcePaths,
+            StringInputList sourcePaths,
             [Description("The paths to store the copied assets.")]
-            string[] destinationPaths
+            StringInputList destinationPaths
         )
         {
             return MainThread.Instance.Run(() =>
             {
-                if (sourcePaths.Length == 0)
+                if (sourcePaths.Count == 0)
                     throw new System.Exception(Error.SourcePathsArrayIsEmpty());
 
-                if (sourcePaths.Length != destinationPaths.Length)
+                if (sourcePaths.Count != destinationPaths.Count)
                     throw new System.Exception(Error.SourceAndDestinationPathsArrayMustBeOfTheSameLength());
 
                 var response = new CopyAssetsResponse();
 
-                for (var i = 0; i < sourcePaths.Length; i++)
+                for (var i = 0; i < sourcePaths.Count; i++)
                 {
                     var sourcePath = sourcePaths[i];
                     var destinationPath = destinationPaths[i];

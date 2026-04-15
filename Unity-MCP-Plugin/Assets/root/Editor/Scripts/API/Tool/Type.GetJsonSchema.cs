@@ -132,6 +132,8 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
                     }
                 }
             }
+
+            UnityMcpPlugin.SanitizeSchemaRefs(schema);
             return schema.ToJsonString(new JsonSerializerOptions { WriteIndented = writeIndented });
         }
     }

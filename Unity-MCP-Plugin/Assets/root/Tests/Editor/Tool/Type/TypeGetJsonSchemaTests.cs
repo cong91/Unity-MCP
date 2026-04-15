@@ -119,6 +119,31 @@ namespace com.IvanMurzak.Unity.MCP.Editor.Tests
         // ─────────────────────────────────────────────────────────────
 
         [UnityTest]
+        public IEnumerator StringArray_WithDefs_EncodesLocalRefs()
+        {
+            var schemaJson = GetSchema(typeof(string[]).AssemblyQualifiedName!, includeDefs: true);
+            var schema = ParseSchema(schemaJson);
+            var refs = JsonSchema.FindAllProperties(schema, JsonSchema.Ref);
+
+            foreach (var refNode in refs)
+            {
+                var refValue = refNode?.ToString();
+                Assert.IsNotNull(refValue, "$ref value should not be null");
+                Assert.IsFalse(refValue!.Contains("#/$defs/System.String[]"), "Raw CLR array ref must not leak into emitted schema");
+            }
+
+            Assert.IsFalse(schemaJson.Contains("#/$defs/System.String[]"),
+                "Schema must not contain raw CLR array local ref for System.String[]");
+
+            if (refs.Count > 0)
+            {
+                StringAssert.Contains("#/%24defs/System.String%5B%5D", schemaJson,
+                    "When a local ref is emitted for System.String[], it must be URI-safe encoded");
+            }
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator Ignore_Ignore_ObjectType_ZeroDescriptions()
         {
             var schema = ParseSchema(GetSchema(AssetObjectRefName));

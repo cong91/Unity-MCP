@@ -123,6 +123,17 @@ The plugin ships with 100+ built-in tools across three categories. Each tool bri
 </details>
 
 <details>
+  <summary>2D & Tilemap</summary>
+
+- `sprite-import-configure` - Configure a texture for Sprite Single/Multiple import, pixels-per-unit, filtering, wrapping, compression, and readability
+- `sprite-slice-grid` - Slice a sprite sheet into a regular grid using Unity's Sprite Editor data-provider APIs
+- `tile-assets-create` - Create or update Tile assets from all sliced sprites in a sprite sheet
+- `tilemap-2d-create` - Create a Grid root and Tilemap child in the active scene with Rectangular, Isometric, or Hex layouts
+- `tilemap-2d-paint` - Paint Tile assets into a named Tilemap using explicit cell coordinates
+
+</details>
+
+<details>
   <summary>Scene & Hierarchy</summary>
 
 - `gameobject-component-add` - Add Component to GameObject
@@ -188,6 +199,7 @@ Install extensions when need more tools or [create your own tools](#add-custom-t
   - [Install Additional Skills and Tools](#install-additional-skills-and-tools)
 - [Contents](#contents)
   - [More Documentation](#more-documentation)
+  - [2D Tilemap Workflow](docs/2d-tilemap-workflow.md)
 - [Installation](#installation)
   - [Step 1: Install `Unity MCP Plugin`](#step-1-install-unity-mcp-plugin)
     - [Option 1 - Installer](#option-1---installer)

@@ -36,21 +36,21 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
         public DeleteAssetsResponse Delete
         (
             [Description("The paths of the assets")]
-            string[] paths
+            StringInputList paths
         )
         {
             return MainThread.Instance.Run(() =>
             {
                 var logger = UnityLoggerFactory.LoggerFactory.CreateLogger<Tool_Assets>();
 
-                if (paths.Length == 0)
+                if (paths.Count == 0)
                     throw new System.Exception(Error.SourcePathsArrayIsEmpty());
 
-                logger.LogInformation("Deleting {Count} asset(s): {Paths}", paths.Length, string.Join(", ", paths));
+                logger.LogInformation("Deleting {Count} asset(s): {Paths}", paths.Count, string.Join(", ", paths));
 
                 var response = new DeleteAssetsResponse();
                 var outFailedPaths = new List<string>();
-                var success = AssetDatabase.DeleteAssets(paths, outFailedPaths);
+                var success = AssetDatabase.DeleteAssets(paths.ToArray(), outFailedPaths);
 
                 if (!success)
                 {

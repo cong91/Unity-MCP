@@ -31,7 +31,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
         )]
         [Description("Set the current Selection in the Unity Editor to the provided objects. " +
             "Use '" + EditorSelectionGetToolId + "' tool to get the current selection first.")]
-        public SelectionData Set(ObjectRef[] select)
+        public SelectionData Set(ObjectRefInputList select)
         {
             return MainThread.Instance.Run(() =>
             {

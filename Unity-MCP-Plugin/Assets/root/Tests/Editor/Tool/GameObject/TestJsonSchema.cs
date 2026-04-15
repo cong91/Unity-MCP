@@ -81,6 +81,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.Tests
 
             Assert.IsNotNull(json, $"Json is null");
             Assert.IsFalse(json.Contains($"\"{JsonSchema.Error}\":"), $"Json contains {JsonSchema.Error} string");
+            Assert.IsFalse(json.Contains("#/$defs/System.String[]"), "Schema must not expose raw CLR array local refs");
         }
 
         [UnityTest]

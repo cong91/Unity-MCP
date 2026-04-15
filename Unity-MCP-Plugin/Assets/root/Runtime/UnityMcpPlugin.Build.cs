@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using com.IvanMurzak.McpPlugin;
 using com.IvanMurzak.ReflectorNet;
 using com.IvanMurzak.ReflectorNet.Utils;
@@ -149,6 +150,7 @@ namespace com.IvanMurzak.Unity.MCP
             configure?.Invoke(mcpPluginBuilder);
 
             var mcpPlugin = mcpPluginBuilder.Build(reflector);
+            SanitizeRegisteredToolSchemas(mcpPlugin);
 
             _pluginConnectionSubscription?.Dispose();
             _pluginConnectionSubscription = mcpPlugin.ConnectionState
@@ -162,6 +164,8 @@ namespace com.IvanMurzak.Unity.MCP
         protected virtual void ApplyConfigToMcpPlugin(IMcpPlugin mcpPlugin)
         {
             _logger.LogTrace("{method} called.", nameof(ApplyConfigToMcpPlugin));
+
+            SanitizeRegisteredToolSchemas(mcpPlugin);
 
             // Enable/Disable tools based on config
             var toolManager = mcpPlugin.McpManager.ToolManager;
@@ -235,6 +239,66 @@ namespace com.IvanMurzak.Unity.MCP
             }
 
             _logger.LogTrace("{method} completed.", nameof(ApplyConfigToMcpPlugin));
+        }
+
+        public static JsonNode? SanitizeSchemaRefs(JsonNode? schema)
+        {
+            if (schema == null)
+                return null;
+
+            switch (schema)
+            {
+                case JsonObject obj:
+                    if (obj.TryGetPropertyValue("$ref", out var refNode) && refNode != null)
+                    {
+                        var refValue = refNode.GetValue<string>();
+                        var sanitizedRef = SanitizeLocalRef(refValue);
+                        if (!string.Equals(refValue, sanitizedRef, StringComparison.Ordinal))
+                            obj["$ref"] = sanitizedRef;
+                    }
+
+                    foreach (var key in obj.Select(x => x.Key).ToList())
+                        SanitizeSchemaRefs(obj[key]);
+                    break;
+
+                case JsonArray arr:
+                    foreach (var item in arr)
+                        SanitizeSchemaRefs(item);
+                    break;
+            }
+
+            return schema;
+        }
+
+        static void SanitizeRegisteredToolSchemas(IMcpPlugin mcpPlugin)
+        {
+            var toolManager = mcpPlugin.McpManager.ToolManager;
+            if (toolManager == null)
+                return;
+
+            foreach (var tool in toolManager.GetAllTools())
+            {
+                SanitizeSchemaRefs(tool.InputSchema);
+                SanitizeSchemaRefs(tool.OutputSchema);
+            }
+        }
+
+        static string SanitizeLocalRef(string? reference)
+        {
+            if (string.IsNullOrEmpty(reference) || !reference.StartsWith("#/", StringComparison.Ordinal))
+                return reference ?? string.Empty;
+
+            if (reference.Contains('%', StringComparison.Ordinal))
+                return reference;
+
+            var pointer = reference.Substring(2);
+            if (pointer.Length == 0)
+                return reference;
+
+            var encodedTokens = pointer
+                .Split('/')
+                .Select(Uri.EscapeDataString);
+            return "#/" + string.Join("/", encodedTokens);
         }
     }
 }

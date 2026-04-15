@@ -15,9 +15,26 @@ using System.ComponentModel;
 using com.IvanMurzak.McpPlugin;
 using com.IvanMurzak.ReflectorNet.Model;
 using com.IvanMurzak.ReflectorNet.Utils;
+using com.IvanMurzak.Unity.MCP.Runtime.Data;
 
 namespace com.IvanMurzak.Unity.MCP.Editor.API
 {
+    [Description("A JSON array of strings.")]
+    public class StringInputList : List<string>
+    {
+        public StringInputList() { }
+        public StringInputList(int capacity) : base(capacity) { }
+        public StringInputList(IEnumerable<string> collection) : base(collection) { }
+    }
+
+    [Description("A JSON array of object references.")]
+    public class ObjectRefInputList : List<ObjectRef>
+    {
+        public ObjectRefInputList() { }
+        public ObjectRefInputList(int capacity) : base(capacity) { }
+        public ObjectRefInputList(IEnumerable<ObjectRef> collection) : base(collection) { }
+    }
+
     [McpPluginToolType]
     public partial class Tool_Tool
     {

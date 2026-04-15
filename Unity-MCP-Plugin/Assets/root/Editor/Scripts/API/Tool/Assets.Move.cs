@@ -35,22 +35,22 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
         public MoveAssetsResponse Move
         (
             [Description("The paths of the assets to move.")]
-            string[] sourcePaths,
+            StringInputList sourcePaths,
             [Description("The paths of moved assets.")]
-            string[] destinationPaths
+            StringInputList destinationPaths
         )
         {
             return MainThread.Instance.Run(() =>
             {
-                if (sourcePaths.Length == 0)
+                if (sourcePaths.Count == 0)
                     throw new ArgumentException(Error.SourcePathsArrayIsEmpty(), nameof(sourcePaths));
 
-                if (sourcePaths.Length != destinationPaths.Length)
+                if (sourcePaths.Count != destinationPaths.Count)
                     throw new ArgumentException(Error.SourceAndDestinationPathsArrayMustBeOfTheSameLength());
 
                 var response = new MoveAssetsResponse();
 
-                for (int i = 0; i < sourcePaths.Length; i++)
+                for (int i = 0; i < sourcePaths.Count; i++)
                 {
                     var error = AssetDatabase.MoveAsset(sourcePaths[i], destinationPaths[i]);
                     if (string.IsNullOrEmpty(error))

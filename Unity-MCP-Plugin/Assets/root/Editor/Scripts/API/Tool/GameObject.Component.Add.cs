@@ -34,7 +34,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
         public AddComponentResponse AddComponent
         (
             [Description("Full name of the Component. It should include full namespace path and the class name.")]
-            string[] componentNames,
+            StringInputList componentNames,
             GameObjectRef gameObjectRef
         )
         {
@@ -47,7 +47,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             if (componentNames == null)
                 throw new ArgumentNullException(nameof(componentNames), "No component names provided.");
 
-            if (componentNames.Length == 0)
+            if (componentNames.Count == 0)
                 throw new ArgumentException("No component names provided.", nameof(componentNames));
 
             return MainThread.Instance.Run(() =>

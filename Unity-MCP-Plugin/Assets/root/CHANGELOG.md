@@ -2,6 +2,11 @@
 
 ## [0.17.1] - 2025-01-XX
 
+### Added
+
+- Practical 2D/tilemap MCP tools for sprite-sheet import, grid slicing, tile asset generation, tilemap creation, and tile painting
+- EditMode workflow tests covering the new 2D toolchain end to end
+
 ### Fixed
 
 - **Play Mode Reconnection**: Fixed Unity-MCP-Plugin not reconnecting after exiting Play mode. The plugin now automatically re-establishes connection when returning to Edit mode if "Keep Connected" is enabled.

@@ -6,6 +6,7 @@
 - **Tools & Features**
   - [Tools Reference](/#tools-reference)
   - [Default MCP Tools](/default-mcp-tools.md)
+  - [2D Tilemap Workflow](/2d-tilemap-workflow.md)
   - [Customize MCP](/#customize-mcp)
   - [Runtime Usage](/#runtime-usage-in-game)
 

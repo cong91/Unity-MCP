@@ -45,6 +45,17 @@ Manage files, folders, and project resources.
 | **Assets / Prefab / Close** | `assets-prefab-close` | Exit Prefab Mode. |
 | **Assets / Prefab / Save** | `assets-prefab-save` | Save changes in Prefab Mode. |
 
+## 🧱 2D & Tilemap
+Build practical 2D content pipelines directly from MCP.
+
+| Tool | ID | Description |
+| :--- | :--- | :--- |
+| **2D / Sprite Import Configure** | `sprite-import-configure` | Configure a texture for Sprite Single/Multiple import, pixels-per-unit, filtering, wrapping, and compression. |
+| **2D / Sprite Slice Grid** | `sprite-slice-grid` | Slice a sprite sheet into a regular grid using Unity's Sprite Editor data-provider APIs. |
+| **2D / Create Tile Assets** | `tile-assets-create` | Create or update Tile assets from all sliced sprites in a sprite sheet. |
+| **2D / Create Tilemap** | `tilemap-2d-create` | Create a Grid root and Tilemap child in the active scene with Rectangular/Isometric/Hex layouts. |
+| **2D / Paint Tilemap** | `tilemap-2d-paint` | Paint Tile assets into a named Tilemap using explicit cell coordinates. |
+
 ## 🎮 GameObject
 Manage scene objects and hierarchy.
 
